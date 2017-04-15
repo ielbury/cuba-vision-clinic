@@ -1,0 +1,17 @@
+<Context>
+
+    <!-- Database connection -->
+    <Resource driverClassName="com.microsoft.sqlserver.jdbc.SQLServerDriver"
+              maxIdle="2"
+              maxTotal="20"
+              maxWaitMillis="5000"
+              name="jdbc/CubaDS"
+              password="cuba"
+              type="javax.sql.DataSource"
+              url="jdbc:sqlserver://localhost;databaseName=cubavisionclinic"
+              username="cuba"/>
+
+    <!-- Switch off session serialization -->
+    <Manager pathname=""/>
+
+</Context>

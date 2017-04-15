@@ -1,0 +1,13 @@
+<Context>
+    <Resource driverClassName="com.microsoft.sqlserver.jdbc.SQLServerDriver"
+              maxIdle="2"
+              maxTotal="20"
+              maxWaitMillis="5000"
+              name="jdbc/CubaDS"
+              password="@@sqlAdminPassword@@"
+              type="javax.sql.DataSource"
+              url="jdbc:sqlserver://@@sqlServerName@@.database.windows.net;databaseName=@@sqlDatabase@@"
+              username="@@sqlAdminUserName@@"/>
+    <!-- Switch off session serialization -->
+    <Manager pathname=""/>
+</Context>
