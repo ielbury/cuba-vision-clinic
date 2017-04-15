@@ -1,20 +1,17 @@
 
 buildscript {
-    ext.cubaVersion = '6.3.5'
+    ext.cubaVersion = '6.5.0.RC1'
     repositories {
         maven {
             url 'https://repo.cuba-platform.com/content/groups/work'
             credentials {
-                username(rootProject.hasProperty('repoUser') ? rootProject['repoUser'] : 'developer')
-                password(rootProject.hasProperty('repoPass') ? rootProject['repoPass'] : 'Haul2010')
+                username(rootProject.hasProperty('repoUser') ? rootProject['repoUser'] : 'cuba')
+                password(rootProject.hasProperty('repoPass') ? rootProject['repoPass'] : 'cuba123')
             }
         }
-        
     }
     dependencies {
         classpath "com.haulmont.gradle:cuba-plugin:$cubaVersion"
-
-        classpath "com.haulmont.cuba:cuba-global:$cubaVersion"
 
         
     }
@@ -45,7 +42,12 @@ cuba {
     }
 }
 
-def mssql = 'net.sourceforge.jtds:jtds:1.2.4'
+dependencies {
+    appComponent("com.haulmont.cuba:cuba-global:$cubaVersion")
+}
+
+
+def mssql = 'com.microsoft.sqlserver:mssql-jdbc:6.1.0.jre8'
 
 configure([globalModule, coreModule, guiModule, webModule]) {
     apply(plugin: 'java')
@@ -83,8 +85,8 @@ configure(coreModule) {
     dependencies {
         compile(globalModule)
         provided(servletApi)
-        jdbc(mssql)
-        testRuntime(mssql)
+        jdbc(mssql) { exclude(group: 'com.microsoft.azure', module: 'azure-keyvault') }
+        testRuntime(mssql) { exclude(group: 'com.microsoft.azure', module: 'azure-keyvault') }
 
     }
 
@@ -103,23 +105,21 @@ configure(coreModule) {
     }
 
     task createDb(dependsOn: assembleDbScripts, description: 'Creates local database', type: CubaDbCreation) {
-        connectionParams = ';instance=SQLEXPRESS'
         dbmsVersion = '2012'
         dbms = 'mssql'
-        host = 'shiryaeva'
-        dbName = 'visionclinic'
-        dbUser = 'sa'
-        dbPassword = '1'
+        host = 'localhost'
+        dbName = 'cubavisionclinic'
+        dbUser = 'cuba'
+        dbPassword = 'cuba'
     }
 
     task updateDb(dependsOn: assembleDbScripts, description: 'Updates local database', type: CubaDbUpdate) {
-        connectionParams = ';instance=SQLEXPRESS'
         dbmsVersion = '2012'
         dbms = 'mssql'
-        host = 'shiryaeva'
-        dbName = 'visionclinic'
-        dbUser = 'sa'
-        dbPassword = '1'
+        host = 'localhost'
+        dbName = 'cubavisionclinic'
+        dbUser = 'cuba'
+        dbPassword = 'cuba'
     }
 }
 
@@ -202,7 +202,77 @@ task restart(dependsOn: ['stop', ':app-core:deploy', ':app-web:deploy'], descrip
 }
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '2.13'
+    gradleVersion = '3.1'
 }
 
 apply from: 'extra.gradle'
+
+task buildWar(type: CubaWarBuilding) {
+    coreContextXmlPath = 'modules/core/web/META-INF/azure-context.xml'
+    webXmlPath = 'modules/web/web/WEB-INF/single-war-web.xml'
+    appProperties = ['cuba.automaticDatabaseUpdate' : true]
+    includeContextXml = true
+    includeJdbcDriver = true
+    appHome = '/home/site/wwwroot/webapps'
+}
+
+configurations {
+    ftpAntTask
+}
+
+dependencies {
+    ftpAntTask("org.apache.ant:ant-commons-net:1.9.+");
+}
+
+ant.taskdef(
+        name: 'ftp',
+        classname: 'org.apache.tools.ant.taskdefs.optional.net.FTP',
+        classpath: configurations.ftpAntTask.asPath
+)
+
+task buildWarAndDeployToAzure(type: CubaWarBuilding) {
+    // Configuration - Start
+    def contextFile = 'modules/core/web/META-INF/azure-context.xml'
+    def appHostName = '@@webSiteName@@.azurewebsites.net'
+    def ftpHostName = 'waws-prod-bay-023.ftp.azurewebsites.windows.net'
+    def ftpUserName = '@@webSiteName@@\\@@ftpUserName@@'
+    def ftpPassword = '@@ftpPassword@@'
+    singleWar = true
+    // Configuration - End
+
+    appHome = '/home/site/wwwroot/webapps'
+    coreContextXmlPath = contextFile
+    includeJdbcDriver = true
+    includeContextXml = true
+
+    appProperties = [
+            'cuba.automaticDatabaseUpdate': true,
+            'cuba.logDir': '/home/LogFiles',
+            'cuba.webAppUrl': 'https://' + appHostName + '/app',
+            'cuba.webHostName': appHostName,
+            'cuba.webPort': 443,
+            'cuba.web.loginDialogDefaultUser': '',
+            'cuba.web.loginDialogDefaultPassword': ''
+    ]
+
+    if(singleWar) {
+        includeContextXml = true
+        webXmlPath = 'modules/web/web/WEB-INF/single-war-web.xml'
+        appProperties.put('cuba.useLocalServiceInvocation', true)
+    } else {
+        appProperties.put('cuba.connectionUrlList', 'https://' + appHostName + '/app-core')
+    }
+
+    doLast {
+        def webApps = 'site/wwwroot/webapps'
+        def buildDir = 'build/distributions/war'
+
+        ant.ftp(action: 'del', server: ftpHostName, remotedir: webApps, userid: ftpUserName, password: ftpPassword) {
+            fileset(includes: '*.war')
+        }
+
+        ant.ftp(server: ftpHostName, remotedir: webApps, userid: ftpUserName, password: ftpPassword) {
+            fileset(dir: buildDir, includes: '*.war')
+        }
+    }
+}

@@ -9,4 +9,6 @@ Migration is done automatically by the reverse-engineering functionality, provid
 
 Find technical aspects of how to launch the application [here](https://github.com/aleksey-stukalov/cuba-vision-clinic/wiki).
 
-Based on CUBA Platform 6.3.4
+Based on CUBA Platform 6.5.0-RC
+
+Added sample Azure Build and Deploy "Recipe". See post [here](https://www.cuba-platform.com/support/topic/publish-cuba-project-to-azure-website) for details.

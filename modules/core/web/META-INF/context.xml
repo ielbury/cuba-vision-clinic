@@ -1,24 +1,23 @@
 <Context>
     <!-- Database connection -->
-    <Resource driverClassName="org.hsqldb.jdbc.JDBCDriver"
+    <Resource driverClassName="com.microsoft.sqlserver.jdbc.SQLServerDriver"
               maxIdle="2"
               maxTotal="20"
               maxWaitMillis="5000"
               name="jdbc/CubaDS"
-              password=""
+              password="cuba"
               type="javax.sql.DataSource"
-              url="jdbc:hsqldb:hsql://localhost/visionclinic"
-              username="sa"/>
+              url="jdbc:sqlserver://localhost;databaseName=cubavisionclinic"
+              username="cuba"/>
     <!-- Switch off session serialization -->
     <Manager pathname=""/>
-    <!--<Resource driverClassName="net.sourceforge.jtds.jdbc.Driver"
+    <!--<Resource driverClassName="org.hsqldb.jdbc.JDBCDriver"
           maxIdle="2"
           maxTotal="20"
           maxWaitMillis="5000"
           name="jdbc/CubaDS"
-          password="1"
+          password=""
           type="javax.sql.DataSource"
-          url="jdbc:jtds:sqlserver://localhost/visionclinic;instance=SQLEXPRESS"
-          username="sa"
-          validationQuery="select 1"/>-->
+          url="jdbc:hsqldb:hsql://localhost/visionclinic"
+          username="sa"/>-->
 </Context>
